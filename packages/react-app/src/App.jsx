@@ -49,7 +49,7 @@ const ipfs = create({ host: "ipfs.infura.io", port: "5001", protocol: "https" })
     https://github.com/scaffold-eth/scaffold-eth
 
     Support:
-    https://t.me/joinchat/KByvmRe5wkR-8F_zz6AjpA
+    https://t.me/joinchat/3We388hL_QIyZTM0
     or DM @austingriffith on twitter or telegram
 
     You should get your own Alchemy.com & Infura.io ID and put it in `constants.js`
@@ -529,17 +529,11 @@ function App(props) {
       {/* 🗺 Extra UI like gas price, eth price, faucet, and support: */}
       <div style={{ position: "fixed", textAlign: "left", left: 0, bottom: 20, padding: 10 }}>
         <Row align="middle" gutter={[4, 4]}>
-          <Col span={8}>
-            <Ramp price={price} address={address} networks={NETWORKS} />
-          </Col>
 
-          <Col span={8} style={{ textAlign: "center", opacity: 0.8 }}>
-            <GasGauge gasPrice={gasPrice} />
-          </Col>
           <Col span={8} style={{ textAlign: "center", opacity: 1 }}>
             <Button
               onClick={() => {
-                window.open("https://t.me/joinchat/KByvmRe5wkR-8F_zz6AjpA");
+                window.open("https://t.me/joinchat/3We388hL_QIyZTM0");
               }}
               size="large"
               shape="round"

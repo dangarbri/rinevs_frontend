@@ -258,7 +258,7 @@ export default function Hints({ yourLocalBalance, mainnetProvider, price, addres
           className="highlight"
           style={{ marginLeft: 4, /* backgroundColor: "#f9f9f9", */ padding: 4, borderRadius: 4, fontWeight: "bolder" }}
         >
-          <a target="_blank" rel="noopener noreferrer" href="https://t.me/joinchat/KByvmRe5wkR-8F_zz6AjpA">
+          <a target="_blank" rel="noopener noreferrer" href="https://t.me/joinchat/3We388hL_QIyZTM0">
             Telegram Chat
           </a>
         </span>
