@@ -11,6 +11,7 @@ import {
 import { useEventListener } from "eth-hooks/events/useEventListener";
 import { useExchangeEthPrice } from "eth-hooks/dapps/dex";
 import React, { useCallback, useEffect, useState } from "react";
+import ReactJson from "react-json-view";
 import { Link, Route, Switch, useLocation } from "react-router-dom";
 import "./App.css";
 import {
@@ -24,7 +25,7 @@ import {
   NetworkDisplay,
   FaucetHint,
   NetworkSwitch,
-  IpfsUploader
+  IpfsUploader,
 } from "./components";
 import { NETWORKS, ALCHEMY_KEY } from "./constants";
 import externalContracts from "./contracts/external_contracts";
@@ -39,9 +40,9 @@ const { ethers } = require("ethers");
 
 const { BufferList } = require("bl");
 
-const ipfs = create({ host: "ipfs.infura.io", port: "5001", protocol: "https" });
 //const ipfsAPI = require("ipfs-http-client");
 
+const ipfs = create({ host: "ipfs.infura.io", port: "5001", protocol: "https" });
 /*
     Welcome to 🏗 scaffold-eth !
 
@@ -78,6 +79,23 @@ const providers = [
   `https://eth-mainnet.alchemyapi.io/v2/${ALCHEMY_KEY}`,
   "https://rpc.scaffoldeth.io:48544",
 ];
+
+const STARTING_JSON = {
+  description: "It's actually a bison?",
+  external_url: "https://austingriffith.com/portfolio/paintings/", // <-- this can link to a page for the specific file too
+  image: "https://austingriffith.com/images/paintings/buffalo.jpg",
+  name: "Buffalo",
+  attributes: [
+    {
+      trait_type: "BackgroundColor",
+      value: "green",
+    },
+    {
+      trait_type: "Eyes",
+      value: "googly",
+    },
+  ],
+};
 
 // helper function to "Get" from IPFS
 // you usually go content.toString() after this...
@@ -320,6 +338,15 @@ function App(props) {
 
   const faucetAvailable = localProvider && localProvider.connection && targetNetwork.name.indexOf("local") !== -1;
 
+  const [ipfsHash, setIpfsHash] = useState();
+  const [ipfsDownHash, setIpfsDownHash] = useState();
+
+  const [ipfsContent, setIpfsContent] = useState();
+
+  const [yourJSON, setYourJSON] = useState(STARTING_JSON);
+  const [sending, setSending] = useState();
+
+
   return (
     <div className="App">
       {/* ✏️ Edit the header and change the title to your project name */}
@@ -341,6 +368,9 @@ function App(props) {
         </Menu.Item>
         <Menu.Item key="/ipfsup">
           <Link to="/ipfsup">IPFS Upload</Link>
+        </Menu.Item>
+        <Menu.Item key="/ipfs-images">
+          <Link to="/ipfs-images">IPFS Image Uploader</Link>
         </Menu.Item>
         <Menu.Item key="/debug">
           <Link to="/debug">Debug Contracts</Link>
@@ -425,6 +455,48 @@ function App(props) {
           />
         </Route>
         <Route path="/ipfsup">
+          <div style={{ paddingTop: 32, width: 740, margin: "auto", textAlign: "left" }}>
+            <ReactJson
+              style={{ padding: 8 }}
+              src={yourJSON}
+              theme="pop"
+              enableClipboard={false}
+              onEdit={(edit, a) => {
+                setYourJSON(edit.updated_src);
+              }}
+              onAdd={(add, a) => {
+                setYourJSON(add.updated_src);
+              }}
+              onDelete={(del, a) => {
+                setYourJSON(del.updated_src);
+              }}
+            />
+          </div>
+
+          <Button
+            style={{ margin: 8 }}
+            loading={sending}
+            size="large"
+            shape="round"
+            type="primary"
+            onClick={async () => {
+              console.log("UPLOADING...", yourJSON);
+              setSending(true);
+              setIpfsHash();
+              const result = await ipfs.add(JSON.stringify(yourJSON)); // addToIPFS(JSON.stringify(yourJSON))
+              if (result && result.path) {
+                setIpfsHash(result.path);
+              }
+              setSending(false);
+              console.log("RESULT:", result);
+            }}
+          >
+            Upload to IPFS
+          </Button>
+
+          <div style={{ padding: 16, paddingBottom: 150 }}>{ipfsHash}</div>
+        </Route>
+        <Route path="/ipfs-images">
           <IpfsUploader />
         </Route>
       </Switch>
