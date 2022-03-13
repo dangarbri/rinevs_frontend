@@ -367,10 +367,10 @@ function App(props) {
           <Link to="/transfers">Transfers</Link>
         </Menu.Item>
         <Menu.Item key="/ipfsup">
-          <Link to="/ipfsup">IPFS Upload</Link>
+          <Link to="/ipfsup">Upload JSON to IPFS</Link>
         </Menu.Item>
         <Menu.Item key="/ipfs-images">
-          <Link to="/ipfs-images">IPFS Image Uploader</Link>
+          <Link to="/ipfs-images">Upload Image to IPFS</Link>
         </Menu.Item>
         <Menu.Item key="/debug">
           <Link to="/debug">Debug Contracts</Link>
