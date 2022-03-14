@@ -36,8 +36,10 @@ export default class IpfsUploader extends Component {
     // Restores the user's upload history from local storage
     loadState() {
         let json = localStorage.getItem("upload_history");
-        let localHistory = JSON.parse(json);
-        this.setState({history: localHistory});
+        if (json != null) {
+            let localHistory = JSON.parse(json);
+            this.setState({history: localHistory});
+        }
     }
 
     // Add an uploaded image to the history
