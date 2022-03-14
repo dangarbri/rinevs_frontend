@@ -25,6 +25,7 @@ import {
   NetworkDisplay,
   FaucetHint,
   NetworkSwitch,
+  IpfsUploader,
 } from "./components";
 import { NETWORKS, ALCHEMY_KEY } from "./constants";
 import externalContracts from "./contracts/external_contracts";
@@ -366,7 +367,10 @@ function App(props) {
           <Link to="/transfers">Transfers</Link>
         </Menu.Item>
         <Menu.Item key="/ipfsup">
-          <Link to="/ipfsup">IPFS Upload</Link>
+          <Link to="/ipfsup">Upload JSON to IPFS</Link>
+        </Menu.Item>
+        <Menu.Item key="/ipfs-images">
+          <Link to="/ipfs-images">Upload Image to IPFS</Link>
         </Menu.Item>
         <Menu.Item key="/debug">
           <Link to="/debug">Debug Contracts</Link>
@@ -491,6 +495,9 @@ function App(props) {
           </Button>
 
           <div style={{ padding: 16, paddingBottom: 150 }}>{ipfsHash}</div>
+        </Route>
+        <Route path="/ipfs-images">
+          <IpfsUploader />
         </Route>
       </Switch>
 
