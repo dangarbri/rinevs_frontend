@@ -49,10 +49,6 @@ const ipfs = create({ host: "ipfs.infura.io", port: "5001", protocol: "https" })
     Code:
     https://github.com/scaffold-eth/scaffold-eth
 
-    Support:
-    https://t.me/joinchat/3We388hL_QIyZTM0
-    or DM @austingriffith on twitter or telegram
-
     You should get your own Alchemy.com & Infura.io ID and put it in `constants.js`
     (this is your connection to the main Ethereum network for ENS etc.)
 
@@ -82,9 +78,9 @@ const providers = [
 
 const STARTING_JSON = {
   description: "It's actually a bison?",
-  external_url: "https://austingriffith.com/portfolio/paintings/", // <-- this can link to a page for the specific file too
-  image: "https://austingriffith.com/images/paintings/buffalo.jpg",
-  name: "Buffalo",
+  external_url: "https://svenir.com/nft/images/", // <-- this can link to a page for the specific file too
+  image: "https://svenir.com/images/nfts/bigzeus.jpg",
+  name: "Big Zeus",
   attributes: [
     {
       trait_type: "BackgroundColor",
