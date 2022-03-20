@@ -12,7 +12,7 @@ const delayMS = 1000
 
 const main = async () => {
   // address to mint NFTs to, default address from local node
-  const toAddress = '0x1Df4D4FA3d513De5d6a4E95a5DCcC8CBB02569B3' 
+  const toAddress = '0xF435dc1093dd0F00D45937578A230edAda593a1D' 
   const localProvider = new ethers.providers.StaticJsonRpcProvider("http://localhost:8545")
   let block = await localProvider.getBlockNumber()
 
@@ -25,11 +25,12 @@ const main = async () => {
   const images = [
     './scripts/privateassets/buffalo.jpg',
     './scripts/privateassets/fish.jpg',
-    './scripts/privateassets/zebra.jpg',
     './scripts/privateassets/rhino.jpg',
+    './scripts/privateassets/zebra.jpg',
+    './scripts/privateassets/fish.jpg',
     './scripts/privateassets/fish.jpg',
     './scripts/privateassets/flamingo.jpg',
-    './scripts/privateassets/godzilla.jpg',
+    './scripts/privateassets/godzilla.jpeg',
   ]
 
   const buffaloImage = fs.readFileSync(images[0])
@@ -63,9 +64,6 @@ const main = async () => {
   const uploadBuffaloManifest = await ipfs.add(JSON.stringify(buffalo))
 
   console.log("image tokenUri is ", uploadedBuffaloImage.path)
-
-  
- 
 
   console.log("MINTING buffalo!!!")
   await YourCollectible.mintItem(toAddress, uploadedBuffaloImage.path)
