@@ -7,7 +7,6 @@ const R = require("ramda")
 const { create } = require('ipfs-http-client')
 const ipfs = create({ host: 'ipfs.infura.io', port: '5001', protocol: 'https' })
 
-let currentIndex = 0
 
 const delayMS = 1000
 
@@ -65,8 +64,8 @@ const main = async () => {
 
   console.log("image tokenUri is ", uploadedBuffaloImage.path)
 
-  currentIndex++
-  fs.writeFileSync("currentIndex.txt", (currentIndex).toString())
+  
+ 
 
   console.log("MINTING buffalo!!!")
   await YourCollectible.mintItem(toAddress, uploadedBuffaloImage.path)
@@ -102,7 +101,7 @@ const main = async () => {
 
   console.log("Minting zebra with IPFS hash (" + uploadedZebraImage.path + ")")
   await YourCollectible.mintItem(toAddress, uploadedZebraImage.path, { gasLimit: 400000 })
-  currentIndex++
+  
 
   await sleep(delayMS)
 
@@ -136,7 +135,7 @@ const main = async () => {
   console.log("Minting rhino with IPFS hash (" + uploadedrhino.path + ")")
   await YourCollectible.mintItem(toAddress, uploadedrhino.path, { gasLimit: 400000 })
 
-  currentIndex++
+  
   await sleep(delayMS)
 
   const fishImage = fs.readFileSync(images[3])
@@ -168,8 +167,8 @@ const main = async () => {
   console.log("Minting fish with IPFS hash (" + uploadedfish.path + ")")
   await YourCollectible.mintItem(toAddress, uploadedfish.path, { gasLimit: 400000 })
 
-  currentIndex++
-  fs.writeFileSync("currentIndex.txt", (currentIndex).toString())
+  
+ 
   await sleep(delayMS)
 
 
