@@ -35,6 +35,7 @@
     "generate": "yarn workspace @scaffold-eth/hardhat generate",
     "account": "yarn workspace @scaffold-eth/hardhat account",
     "mineContractAddress": "cd packages/hardhat && npx hardhat mineContractAddress",
+    "mint": "yarn workspace @scaffold-eth/hardhat mint",
     "wallet": "cd packages/hardhat && npx hardhat wallet",
     "fundedwallet": "cd packages/hardhat && npx hardhat fundedwallet",
     "flatten": "cd packages/hardhat && npx hardhat flatten",

@@ -29,6 +29,10 @@ yarn start
 cd scaffold-eth
 yarn deploy
 ```
+> Mint a few NFTs by editting `/packages/hardhat/scripts/mint.js`:
+- change `toAddress` to set the address to mint the NFTs to
+- Edit the images, metadata
+- Run `yarn mint` to mint
 
 🔏 Edit contract in `packages/hardhat/contracts`
 

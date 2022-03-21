@@ -1,4 +1,4 @@
-import { Button, Col, Menu, Row } from "antd";
+import { Button, Card, Col, List, Menu, Row } from "antd";
 import "antd/dist/antd.css";
 import {
   useBalance,
@@ -16,6 +16,8 @@ import { Link, Route, Switch, useLocation } from "react-router-dom";
 import "./App.css";
 import {
   Account,
+  Address,
+  AddressInput,
   Contract,
   Faucet,
   GasGauge,
@@ -29,7 +31,6 @@ import {
 } from "./components";
 import { NETWORKS, ALCHEMY_KEY } from "./constants";
 import externalContracts from "./contracts/external_contracts";
-// contracts
 import deployedContracts from "./contracts/hardhat_contracts.json";
 import { Transactor, Web3ModalSetup } from "./helpers";
 import { Home, ExampleUI, Hints, Subgraph } from "./views";
@@ -39,6 +40,7 @@ import { create } from "ipfs-http-client";
 const { ethers } = require("ethers");
 
 const { BufferList } = require("bl");
+
 
 //const ipfsAPI = require("ipfs-http-client");
 
@@ -92,21 +94,15 @@ const STARTING_JSON = {
     },
   ],
 };
+                                                                                                                                                                                                                                                        
 
-// helper function to "Get" from IPFS
-// you usually go content.toString() after this...
-const getFromIPFS = async hashToGet => {
-  for await (const file of ipfs.get(hashToGet)) {
-    console.log(file.path);
-    if (!file.content) continue;
-    const content = new BufferList();
-    for await (const chunk of file.content) {
-      content.append(chunk);
-    }
-    console.log(content);
+export async function getFromIPFS(hashToGet) {
+  for await (const file of ipfs.cat(hashToGet)) {
+    const content = new BufferList(file).toString();
     return content;
   }
-};
+}
+
 
 function App(props) {
   // specify all the chains your app is available on. Eg: ['localhost', 'mainnet', ...otherNetworks ]
@@ -116,6 +112,9 @@ function App(props) {
   const [injectedProvider, setInjectedProvider] = useState();
   const [address, setAddress] = useState();
   const [selectedNetwork, setSelectedNetwork] = useState(networkOptions[0]);
+  
+  const [transferToAddresses, setTransferToAddresses] = useState({});  
+  const [collectibles, setCollectibles] = useState([])
   const location = useLocation();
 
   const targetNetwork = NETWORKS[selectedNetwork];
@@ -163,7 +162,6 @@ function App(props) {
     getAddress();
   }, [userSigner]);
 
-  // You can warn the user if you would like them to be on a specific network
   const localChainId = localProvider && localProvider._network && localProvider._network.chainId;
   const selectedChainId =
     userSigner && userSigner.provider && userSigner.provider._network && userSigner.provider._network.chainId;
@@ -206,27 +204,22 @@ function App(props) {
 
   // keep track of a variable from the contract in the local React state:
   const purpose = useContractReader(readContracts, "YourContract", "purpose");
+  if(readContracts && readContracts.keys) {
+    console.log('readContracts', readContracts)
+  }  
 
-  // keep track of a variable from the contract in the local React state:
-  const balance = useContractReader(readContracts, "YourCollectible", "balanceOf", [address]);
-  console.log("🤗 balance:", balance);
-
-  // 📟 Listen for broadcast events
-  /*  const transferEvents = useEventListener(readContracts, "YourCollectible", "Transfer", localProvider, 1);
-    console.log("📟 Transfer events:", transferEvents); */
-
-  //
-  // 🧠 This effect will update yourCollectibles by polling when your balance changes
-  //
-  const yourBalance = balance && balance.toNumber && balance.toNumber();
-  const [yourCollectibles, setYourCollectibles] = useState();
+  const NFTBalanceHex = useContractReader(readContracts, "YourCollectible", "balanceOf", [address]);
+  console.log('address', address);
+  console.log('NFTHex', NFTBalanceHex);
+  const NFTBalanceNum = NFTBalanceHex && NFTBalanceHex.toNumber && NFTBalanceHex.toNumber()
+  console.log('NFT Balance:', NFTBalanceNum);
 
   useEffect(() => {
-    const updateYourCollectibles = async () => {
-      const collectibleUpdate = [];
-      for (let tokenIndex = 0; tokenIndex < balance; tokenIndex++) {
+    const fetchCollectibles = async () => {
+      const _collectibles = [];
+      for (let tokenIndex = 0; tokenIndex < NFTBalanceNum; tokenIndex++) {
         try {
-          console.log("GEtting token index", tokenIndex);
+          console.log("Fetching token at Index", tokenIndex);
           const tokenId = await readContracts.YourCollectible.tokenOfOwnerByIndex(address, tokenIndex);
           console.log("tokenId", tokenId);
           const tokenURI = await readContracts.YourCollectible.tokenURI(tokenId);
@@ -235,13 +228,13 @@ function App(props) {
           const ipfsHash = tokenURI.replace("https://ipfs.io/ipfs/", "");
           console.log("ipfsHash", ipfsHash);
 
-          const jsonManifestBuffer = await getFromIPFS(ipfsHash);
-          const obj = JSON.parse(jsonManifestBuffer.toString());
+          const manifest = await getFromIPFS(ipfsHash)
+          const obj = await JSON.parse(manifest);
 
           try {
-            const jsonManifest = JSON.parse(jsonManifestBuffer.toString());
-            console.log("jsonManifest", jsonManifest);
-            collectibleUpdate.push({
+            const jsonManifest = await JSON.parse(manifest);
+            console.log("jsonManifest", manifest);
+            _collectibles.push({
               id: tokenId,
               imageWithPath: "https://ipfs.io/ipfs/" + obj.image,
               owner: address,
@@ -254,55 +247,11 @@ function App(props) {
           console.log(e);
         }
       }
-      setYourCollectibles(collectibleUpdate);
+      console.log('collectibles', _collectibles);
+      setCollectibles(_collectibles)
     };
-    updateYourCollectibles();
-  }, [address, yourBalance]);
-
-  /*
-  const addressFromENS = useResolveName(mainnetProvider, "austingriffith.eth");
-  console.log("🏷 Resolved austingriffith.eth as:",addressFromENS)
-  */
-
-  //
-  // 🧫 DEBUG 👨🏻‍🔬
-  //
-  useEffect(() => {
-    if (
-      DEBUG &&
-      mainnetProvider &&
-      address &&
-      selectedChainId &&
-      yourLocalBalance &&
-      yourMainnetBalance &&
-      readContracts &&
-      writeContracts &&
-      mainnetContracts
-    ) {
-      console.log("_____________________________________ 🏗 scaffold-eth _____________________________________");
-      console.log("🌎 mainnetProvider", mainnetProvider);
-      console.log("🏠 localChainId", localChainId);
-      console.log("👩‍💼 selected address:", address);
-      console.log("🕵🏻‍♂️ selectedChainId:", selectedChainId);
-      console.log("💵 yourLocalBalance", yourLocalBalance ? ethers.utils.formatEther(yourLocalBalance) : "...");
-      console.log("💵 yourMainnetBalance", yourMainnetBalance ? ethers.utils.formatEther(yourMainnetBalance) : "...");
-      console.log("📝 readContracts", readContracts);
-      console.log("🌍 DAI contract on mainnet:", mainnetContracts);
-      console.log("💵 yourMainnetDAIBalance", myMainnetDAIBalance);
-      console.log("🔐 writeContracts", writeContracts);
-    }
-  }, [
-    mainnetProvider,
-    address,
-    selectedChainId,
-    yourLocalBalance,
-    yourMainnetBalance,
-    readContracts,
-    writeContracts,
-    mainnetContracts,
-    localChainId,
-    myMainnetDAIBalance,
-  ]);
+    fetchCollectibles()      
+  }, [address, NFTBalanceNum]);
 
   const loadWeb3Modal = useCallback(async () => {
     const provider = await web3Modal.connect();
@@ -357,7 +306,7 @@ function App(props) {
       />
       <Menu style={{ textAlign: "center", marginTop: 40 }} selectedKeys={[location.pathname]} mode="horizontal">
         <Menu.Item key="/">
-          <Link to="/">YourCollectibles</Link>
+          <Link to="/">Your Collectibles</Link>
         </Menu.Item>
         <Menu.Item key="/transfers">
           <Link to="/transfers">Transfers</Link>
@@ -378,8 +327,65 @@ function App(props) {
 
       <Switch>
         <Route exact path="/">
-          {/* pass in any web3 props to this Home component. For example, yourLocalBalance */}
-          <Home yourLocalBalance={yourLocalBalance} readContracts={readContracts} />
+        <div style={{padding:32}}>
+          <Button
+            onClick={() => {
+            console.log("MINT!");
+            tx(writeContracts.YourCollectible.requestMint({value: ethers.utils.parseEther("0.001")}));
+            }}>
+              Mint
+            </Button>
+        </div>
+        <p>Your Collectibles</p>
+        <List
+          bordered
+          dataSource={collectibles}
+          renderItem={item => {
+          const id = item.id.toNumber();
+            return (
+              <List.Item key={id + "_" + item.uri + "_" + item.owner}>
+                <Card
+                  title={
+                  <div>
+                    <span style={{ fontSize: 16, marginRight: 8 }}>#{id}</span> {item.name}
+                  </div>
+                }>
+                  <div>
+                    <img src={item.imageWithPath} style={{ maxWidth: 150 }} />
+                  </div>
+                  <div>{item.description}</div>
+                </Card>
+                <div>
+                  owner:{" "}
+                  <Address
+                    address={item.owner}
+                    ensProvider={mainnetProvider}
+                    blockExplorer={blockExplorer}
+                    fontSize={16}
+                  />
+                    <AddressInput
+                      ensProvider={mainnetProvider}
+                      placeholder="transfer to address"
+                      value={transferToAddresses[id]}
+                      onChange={newValue => {
+                        const update = {};
+                        update[id] = newValue;
+                        setTransferToAddresses({ ...transferToAddresses, ...update });
+                        }}
+                    />
+                  <Button
+                    onClick={() => {
+                    console.log("writeContracts", writeContracts);
+                    tx(writeContracts.YourCollectible.transferFrom(address, transferToAddresses[id], id));
+                    }}
+                  >
+                    Transfer
+                  </Button>
+                </div>
+              </List.Item>
+              );
+          }}
+        />
         </Route>
         <Route exact path="/debug">
           {/*
