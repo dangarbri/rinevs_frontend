@@ -95,11 +95,13 @@ module.exports = {
       },
     },
     ropsten: {
-      url: "https://ropsten.infura.io/v3/460f40a260564ac4a4f4b3fffb032dad", // <---- YOUR INFURA ID! (or it won't work)
+      // url: "https://eth-ropsten.alchemyapi.io/v2/T9UQjHVQQvg9KZ-jYkWUv3nmeGS-s887",
+      url: "https://ropsten.infura.io/v3/73cf78206642489d9a34dd2eccd3c593", // <---- YOUR INFURA ID! (or it won't work)
       //      url: "https://speedy-nodes-nyc.moralis.io/XXXXXXXXXXXXXXXXXXXXXXXXX/eth/ropsten",// <---- YOUR MORALIS ID! (not limited to infura)
       accounts: {
-        mnemonic: mnemonic(),
+        mnemonic: 'december badge fade engage dress orient thrive walk want marriage help butter',
       },
+      timeout: 150000
     },
     goerli: {
       url: "https://goerli.infura.io/v3/460f40a260564ac4a4f4b3fffb032dad", // <---- YOUR INFURA ID! (or it won't work)
