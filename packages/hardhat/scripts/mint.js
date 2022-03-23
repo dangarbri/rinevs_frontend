@@ -1,5 +1,5 @@
 /* eslint no-use-before-define: "warn" */
-const fs = require("fs")
+const fs = require("fs/promises")
 const chalk = require("chalk")
 const { config, ethers } = require("hardhat")
 const { utils } = require("ethers")
@@ -11,29 +11,22 @@ const ipfs = create({ host: 'ipfs.infura.io', port: '5001', protocol: 'https' })
 const delayMS = 1000
 
 const main = async () => {
-  // address to mint NFTs to, default address from local node
-  const toAddress = '0xF435dc1093dd0F00D45937578A230edAda593a1D' 
-  const localProvider = new ethers.providers.StaticJsonRpcProvider("http://localhost:8545")
-  let block = await localProvider.getBlockNumber()
-
-  localProvider.resetEventsBlock(1)
-
   const { deployer } = await getNamedAccounts()
+  const toAddress = deployer // mint all the collectibles to the depoying account, should be automatically displayed when account is connected to Metamask and appropriate network
+  console.log('deployer', deployer)
   const YourCollectible = await ethers.getContract("YourCollectible", deployer)
 
   // image assets
   const images = [
-    './scripts/privateassets/buffalo.jpg',
+    './scripts/privateassets/buffalo.jpeg',
     './scripts/privateassets/fish.jpg',
     './scripts/privateassets/rhino.jpg',
-    './scripts/privateassets/zebra.jpg',
-    './scripts/privateassets/fish.jpg',
-    './scripts/privateassets/fish.jpg',
+    './scripts/privateassets/zebra.jpeg',
     './scripts/privateassets/flamingo.jpg',
     './scripts/privateassets/godzilla.jpeg',
   ]
 
-  const buffaloImage = fs.readFileSync(images[0])
+  const buffaloImage = await fs.readFile(images[0])
 
   const uploadedBuffaloImage = await ipfs.add(buffaloImage)
 
@@ -66,18 +59,18 @@ const main = async () => {
   console.log("image tokenUri is ", uploadedBuffaloImage.path)
 
   console.log("MINTING buffalo!!!")
-  await YourCollectible.mintItem(toAddress, uploadedBuffaloImage.path)
+  await YourCollectible.mintItem(toAddress, uploadBuffaloManifest.path)
 
   await sleep(delayMS)
 
-  const zebraImage = fs.readFileSync(images[1])
-  const uploadedZebraImage = await ipfs.add(zebraImage)
-
-  const zebra = {
+  const fishImage = await fs.readFile(images[1])
+  const uploadedFishImage = await ipfs.add(fishImage)
+  console.log(uploadedFishImage.path)
+  const fish = {
     "description": "What is it so worried about?",
     "external_url": "https://austingriffith.com/portfolio/paintings/",// <-- this can link to a page for the specific file too
-    "image": uploadedZebraImage.path,
-    "name": "Zebra",
+    "image": uploadedFishImage.path,
+    "name": "Fish",
     "attributes": [
       {
         "trait_type": "BackgroundColor",
@@ -94,17 +87,17 @@ const main = async () => {
     ]
   }
 
-  console.log("Uploading zebra...")
-  const uploadedzebraManifest = await ipfs.add(JSON.stringify(zebra))
+  console.log("Uploading fish...")
+  const uploadedFishManifest = await ipfs.add(JSON.stringify(fish))
 
-  console.log("Minting zebra with IPFS hash (" + uploadedZebraImage.path + ")")
-  await YourCollectible.mintItem(toAddress, uploadedZebraImage.path, { gasLimit: 400000 })
+  console.log("Minting Fish with IPFS hash (" + uploadedFishImage.path + ")")
+  await YourCollectible.mintItem(toAddress, uploadedFishManifest.path, { gasLimit: 400000 })
   
 
   await sleep(delayMS)
 
 
-  const rhinoImage = fs.readFileSync(images[2])
+  const rhinoImage = await fs.readFile(images[2])
   const uploadedRhinoImage = await ipfs.add(rhinoImage)
 
   const rhino = {
@@ -127,23 +120,24 @@ const main = async () => {
       }
     ]
   }
-  console.log("Uploading rhino...")
-  const uploadedrhino = await ipfs.add(JSON.stringify(rhino))
 
-  console.log("Minting rhino with IPFS hash (" + uploadedrhino.path + ")")
-  await YourCollectible.mintItem(toAddress, uploadedrhino.path, { gasLimit: 400000 })
+  console.log("Uploading rhino...")
+  const uploadedrhinoManifest = await ipfs.add(JSON.stringify(rhino))
+
+  console.log("Minting rhino with IPFS hash (" + uploadedRhinoImage.path + ")")
+  await YourCollectible.mintItem(toAddress, uploadedrhinoManifest.path, { gasLimit: 400000 })
 
   
   await sleep(delayMS)
 
-  const fishImage = fs.readFileSync(images[3])
-  const uploadedFishImage = await ipfs.add(fishImage)
+  const zebraImage = await fs.readFile(images[3])
+  const uploadedZebraImage = await ipfs.add(zebraImage)
 
-  const fish = {
+  const zebra = {
     "description": "Is that an underbyte?",
     "external_url": "https://austingriffith.com/portfolio/paintings/",// <-- this can link to a page for the specific file too
-    "image": uploadedFishImage.path,
-    "name": "Fish",
+    "image": uploadedZebraImage.path,
+    "name": "Zebra",
     "attributes": [
       {
         "trait_type": "BackgroundColor",
@@ -159,18 +153,16 @@ const main = async () => {
       }
     ]
   }
-  console.log("Uploading fish...")
-  const uploadedfish = await ipfs.add(JSON.stringify(fish))
+  console.log("Uploading zebra...")
+  const uploadedZebraManifest = await ipfs.add(JSON.stringify(zebra))
 
-  console.log("Minting fish with IPFS hash (" + uploadedfish.path + ")")
-  await YourCollectible.mintItem(toAddress, uploadedfish.path, { gasLimit: 400000 })
+  console.log("Minting fish with IPFS hash (" + uploadedZebraImage.path + ")")
+  await YourCollectible.mintItem(toAddress, uploadedZebraManifest.path, { gasLimit: 400000 })
 
-  
- 
   await sleep(delayMS)
 
 
-  const flamingoImage = fs.readFileSync(images[4])
+  const flamingoImage = await fs.readFile(images[4])
   const uploadedFlamingoImage = await ipfs.add(flamingoImage)
 
   const flamingo = {
@@ -194,15 +186,15 @@ const main = async () => {
     ]
   }
   console.log("Uploading flamingo...")
-  const uploadedflamingo = await ipfs.add(JSON.stringify(flamingo))
+  const uploadedflamingoManifest = await ipfs.add(JSON.stringify(flamingo))
 
-  console.log("Minting flamingo with IPFS hash (" + uploadedflamingo.path + ")")
-  await YourCollectible.mintItem(toAddress, uploadedflamingo.path, { gasLimit: 400000 })
+  console.log("Minting flamingo with IPFS hash (" + uploadedFlamingoImage.path + ")")
+  await YourCollectible.mintItem(toAddress, uploadedflamingoManifest.path, { gasLimit: 400000 })
 
 
   await sleep(delayMS)
 
-  const godzillaImage = fs.readFileSync(images[5])
+  const godzillaImage = await fs.readFile(images[5])
   const uploadedgodZillaImage = await ipfs.add(godzillaImage)
 
   const godzilla = {
@@ -226,10 +218,10 @@ const main = async () => {
     ]
   }
   console.log("Uploading godzilla...")
-  const uploadedgodzilla = await ipfs.add(JSON.stringify(godzilla))
+  const uploadedgodzillaManifest = await ipfs.add(JSON.stringify(godzilla))
 
-  console.log("Minting godzilla with IPFS hash (" + uploadedgodzilla.path + ")")
-  await YourCollectible.mintItem(toAddress, uploadedgodzilla.path, { gasLimit: 400000 })
+  console.log("Minting godzilla with IPFS hash (" + uploadedgodZillaImage.path + ")")
+  await YourCollectible.mintItem(toAddress, uploadedgodzillaManifest.path, { gasLimit: 400000 })
 
   await sleep(delayMS)
 }
@@ -244,4 +236,4 @@ main()
     console.error(error)
     process.exit(1)
   })
-
+  
