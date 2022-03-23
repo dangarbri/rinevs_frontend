@@ -1,4 +1,4 @@
-import { Button, Card, Col, List, Menu, Row } from "antd";
+import { Button, Card, Col, List, Menu, Row, Spin } from "antd";
 import "antd/dist/antd.css";
 import {
   useBalance,
@@ -61,7 +61,7 @@ const ipfs = create({ host: "ipfs.infura.io", port: "5001", protocol: "https" })
 */
 
 /// 📡 What chain are your contracts deployed to?
-const initialNetwork = NETWORKS.localhost; // <------- select your target frontend network (localhost, rinkeby, xdai, mainnet)
+const initialNetwork = NETWORKS.ropsten; // <------- select your target frontend network (localhost, rinkeby, xdai, mainnet)
 
 // 😬 Sorry for all the console logging
 const DEBUG = true;
@@ -95,10 +95,10 @@ const STARTING_JSON = {
   ],
 };
                                                                                                                                                                                                                                                         
-
 export async function getFromIPFS(hashToGet) {
-  for await (const file of ipfs.cat(hashToGet)) {
-    const content = new BufferList(file).toString();
+  // ipfs.cat() returns a serries of bytes an AsyncIterable<Uint8Array>
+  for await (const chunk of ipfs.cat(hashToGet)) {
+    const content = new BufferList(chunk).toString();
     return content;
   }
 }
@@ -163,6 +163,7 @@ function App(props) {
   }, [userSigner]);
 
   const localChainId = localProvider && localProvider._network && localProvider._network.chainId;
+  console.log('chainId', localChainId)
   const selectedChainId =
     userSigner && userSigner.provider && userSigner.provider._network && userSigner.provider._network.chainId;
 
@@ -291,6 +292,67 @@ function App(props) {
   const [yourJSON, setYourJSON] = useState(STARTING_JSON);
   const [sending, setSending] = useState();
 
+  const renderList = (_collectibles) => {
+    if (_collectibles.length === 0) {
+      return (<>
+        <div>
+          <p>Please wait as NFTs from connected Wallet are synced...</p>
+          <Spin />
+        </div>
+      </>)
+    } else {
+      return (
+        <List
+          bordered
+          dataSource={_collectibles}
+          renderItem={item => {
+            const id = item.id.toNumber()
+            return (
+              <List.Item key={id + "_" + item.uri + "_" + item.owner}>
+                <Card
+                  title={
+                    <div>
+                      <span style={{ fontSize: 16, marginRight: 8 }}>#{id}</span> {item.name}
+                    </div>
+                  }>
+                  <div>
+                    <img src={item.imageWithPath} style={{ maxWidth: 150 }} />
+                  </div>
+                  <div>{item.description}</div>
+                </Card>
+                <div>
+                  owner:{" "}
+                  <Address
+                    address={item.owner}
+                    ensProvider={mainnetProvider}
+                    blockExplorer={blockExplorer}
+                    fontSize={16}
+                  />
+                  <AddressInput
+                    ensProvider={mainnetProvider}
+                    placeholder="transfer to address"
+                    value={transferToAddresses[id]}
+                    onChange={newValue => {
+                      const update = {}
+                      update[id] = newValue
+                      setTransferToAddresses({ ...transferToAddresses, ...update })
+                    }}
+                  />
+                  <Button
+                    onClick={() => {
+                      console.log("writeContracts", writeContracts)
+                      tx(writeContracts.YourCollectible.transferFrom(address, transferToAddresses[id], id))
+                    }}
+                  >
+                    Transfer
+                  </Button>
+                </div>
+              </List.Item>
+            )
+          }}
+        />)
+    }
+  }
 
   return (
     <div className="App">
@@ -337,55 +399,7 @@ function App(props) {
             </Button>
         </div>
         <p>Your Collectibles</p>
-        <List
-          bordered
-          dataSource={collectibles}
-          renderItem={item => {
-          const id = item.id.toNumber();
-            return (
-              <List.Item key={id + "_" + item.uri + "_" + item.owner}>
-                <Card
-                  title={
-                  <div>
-                    <span style={{ fontSize: 16, marginRight: 8 }}>#{id}</span> {item.name}
-                  </div>
-                }>
-                  <div>
-                    <img src={item.imageWithPath} style={{ maxWidth: 150 }} />
-                  </div>
-                  <div>{item.description}</div>
-                </Card>
-                <div>
-                  owner:{" "}
-                  <Address
-                    address={item.owner}
-                    ensProvider={mainnetProvider}
-                    blockExplorer={blockExplorer}
-                    fontSize={16}
-                  />
-                    <AddressInput
-                      ensProvider={mainnetProvider}
-                      placeholder="transfer to address"
-                      value={transferToAddresses[id]}
-                      onChange={newValue => {
-                        const update = {};
-                        update[id] = newValue;
-                        setTransferToAddresses({ ...transferToAddresses, ...update });
-                        }}
-                    />
-                  <Button
-                    onClick={() => {
-                    console.log("writeContracts", writeContracts);
-                    tx(writeContracts.YourCollectible.transferFrom(address, transferToAddresses[id], id));
-                    }}
-                  >
-                    Transfer
-                  </Button>
-                </div>
-              </List.Item>
-              );
-          }}
-        />
+        { renderList(collectibles)}
         </Route>
         <Route exact path="/debug">
           {/*
