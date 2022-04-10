@@ -32,7 +32,7 @@ import {
 import { NETWORKS, ALCHEMY_KEY } from "./constants";
 import externalContracts from "./contracts/external_contracts";
 import deployedContracts from "./contracts/hardhat_contracts.json";
-import { Transactor, Web3ModalSetup } from "./helpers";
+import { Transactor, Web3ModalSetup, Database } from "./helpers";
 import { Home, ExampleUI, Hints, Subgraph } from "./views";
 import { useStaticJsonRPC } from "./hooks";
 import { create } from "ipfs-http-client";
@@ -41,10 +41,11 @@ const { ethers } = require("ethers");
 
 const { BufferList } = require("bl");
 
-
 //const ipfsAPI = require("ipfs-http-client");
 
 const ipfs = create({ host: "ipfs.infura.io", port: "5001", protocol: "https" });
+const db = new Database();
+
 /*
     Welcome to 🏗 scaffold-eth !
 
@@ -79,6 +80,7 @@ const providers = [
 ];
 
 const STARTING_JSON = {
+  city: "Berlin",
   description: "It's actually a bison?",
   external_url: "https://svenir.com/nft/images/", // <-- this can link to a page for the specific file too
   image: "https://svenir.com/images/nfts/bigzeus.jpg",
@@ -290,6 +292,7 @@ function App(props) {
   const [ipfsContent, setIpfsContent] = useState();
 
   const [yourJSON, setYourJSON] = useState(STARTING_JSON);
+  const [accessToken, setAccessToken] = useState("");
   const [sending, setSending] = useState();
 
   const renderList = (_collectibles) => {
@@ -374,7 +377,7 @@ function App(props) {
           <Link to="/transfers">Transfers</Link>
         </Menu.Item>
         <Menu.Item key="/ipfsup">
-          <Link to="/ipfsup">Upload JSON to IPFS</Link>
+          <Link to="/ipfsup">Upload JSON</Link>
         </Menu.Item>
         <Menu.Item key="/ipfs-images">
           <Link to="/ipfs-images">Upload Image to IPFS</Link>
@@ -503,11 +506,29 @@ function App(props) {
               if (result && result.path) {
                 setIpfsHash(result.path);
               }
-              setSending(false);
               console.log("RESULT:", result);
-            }}
+              console.log("Uploading to JSON server");
+              // Redefining accessToken here. If it's not set then
+              // query it from the server. setAccessToken is not
+              // immediate so we can't use accessToken directly the
+              // first time upload is called.
+              let token = accessToken;
+              try {
+                  if (token === "") {
+                      token = await db.getToken(process.env.REACT_APP_ADMIN, process.env.REACT_APP_PASSWORD);
+                      setAccessToken(token);
+                  } 
+
+                  let stuff = await db.upload(token, yourJSON);
+              } catch (error) {
+                  alert("Failure uploading JSON to the API. See console for details");
+                  console.log(error.message);
+              }
+
+              setSending(false);
+          }}
           >
-            Upload to IPFS
+            Upload JSON
           </Button>
 
           <div style={{ padding: 16, paddingBottom: 150 }}>{ipfsHash}</div>
