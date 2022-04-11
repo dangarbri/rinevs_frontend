@@ -79,3 +79,13 @@ Documentation: [docs.scaffoldeth.io](https://docs.scaffoldeth.io)
 
 📣 And a `InfuraID` for production (curent one is from scaffoldeth)
 
+## App Config
+
+You must create a .env file in `packages/react-app` with the following
+fields defined:
+
+```env
+REACT_APP_ADMIN=YourAdmin@admin.com
+REACT_APP_PASSWORD=YouAdmin's Password
+REACT_APP_API=Server endpoint
+```
