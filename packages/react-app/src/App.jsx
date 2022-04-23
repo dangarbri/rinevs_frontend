@@ -28,6 +28,7 @@ import {
   FaucetHint,
   NetworkSwitch,
   IpfsUploader,
+  JsonViewer  
 } from "./components";
 import { NETWORKS, ALCHEMY_KEY } from "./constants";
 import externalContracts from "./contracts/external_contracts";
@@ -79,7 +80,7 @@ const providers = [
   "https://rpc.scaffoldeth.io:48544",
 ];
 
-const STARTING_JSON = {
+let startingJson = {
   city: "Berlin",
   description: "It's actually a bison?",
   external_url: "https://svenir.com/nft/images/", // <-- this can link to a page for the specific file too
@@ -291,10 +292,23 @@ function App(props) {
 
   const [ipfsContent, setIpfsContent] = useState();
 
-  const [yourJSON, setYourJSON] = useState(STARTING_JSON);
+
   const [accessToken, setAccessToken] = useState("");
   const [sending, setSending] = useState();
-
+    
+  const [yourJSON, setYourJSON] = useState(startingJson);
+  // Handle editing by updating starting JSON if the location has JSON in the state.
+  if (location.state && location.state.hasOwnProperty('json') && location.state.json.hasOwnProperty('id')) {
+      let json = location.state.json;
+      // Cleanup internal fields that don't like to be user-updated.
+      delete json.used;
+      delete json.created_at;
+      setYourJSON(json);
+      // After setting the json, delete it from the location so that it doesn't
+      // try to set it again on re-render
+      delete location.state.json; 
+  }
+    
   const renderList = (_collectibles) => {
     if (_collectibles.length === 0) {
       return (<>
@@ -378,6 +392,9 @@ function App(props) {
         </Menu.Item>
         <Menu.Item key="/ipfsup">
           <Link to="/ipfsup">Upload JSON</Link>
+        </Menu.Item>
+        <Menu.Item key="/view-json">
+          <Link to="/view-json">View JSON</Link>
         </Menu.Item>
         <Menu.Item key="/ipfs-images">
           <Link to="/ipfs-images">Upload Image to IPFS</Link>
@@ -475,6 +492,7 @@ function App(props) {
         </Route>
         <Route path="/ipfsup">
           <div style={{ paddingTop: 32, width: 740, margin: "auto", textAlign: "left" }}>
+            <p>Delete the id field if you would like to upload a new record</p>
             <ReactJson
               style={{ padding: 8 }}
               src={yourJSON}
@@ -517,12 +535,17 @@ function App(props) {
                   if (token === "") {
                       token = await db.getToken(process.env.REACT_APP_ADMIN, process.env.REACT_APP_PASSWORD);
                       setAccessToken(token);
-                  } 
+                  }
 
-                  let stuff = await db.upload(token, yourJSON);
+                  let response = await db.upload(token, yourJSON);
+                  if (response && response.hasOwnProperty('id')) {
+                    let newjson = yourJSON;
+                    newjson['id'] = response.id;
+                    setYourJSON(newjson);
+                  }
               } catch (error) {
+                  console.log(error);
                   alert("Failure uploading JSON to the API. See console for details");
-                  console.log(error.message);
               }
 
               setSending(false);
@@ -532,6 +555,9 @@ function App(props) {
           </Button>
 
           <div style={{ padding: 16, paddingBottom: 150 }}>{ipfsHash}</div>
+        </Route>
+        <Route path="/view-json">
+          <JsonViewer />
         </Route>
         <Route path="/ipfs-images">
           <IpfsUploader />
