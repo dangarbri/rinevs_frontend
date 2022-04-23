@@ -1,8 +1,9 @@
 import 'dotenv/config';
 import { Component } from 'react';
 import { Database } from "../helpers";
-import { Card, Button } from 'antd';
+import { Card, Button, Pagination } from 'antd';
 import { Link } from "react-router-dom";
+import ReactJson from "react-json-view";
 import beautify from 'json-beautify';
 
 const db = new Database();
@@ -13,9 +14,6 @@ const CARD_STYLE = {
     margin: "0 auto",
     marginTop: "5px"
 };
-
-// Maximum number of images to display in the upload history
-const HISTORY_LIMIT = 3;
 
 /**
  * This components provides options for interacting with individual JSON
@@ -62,6 +60,39 @@ class JsonBlob extends Component {
     }
 }
 
+class JsonSearch extends Component {
+    constructor(props) {
+        super(props);
+        this.state = {
+            json: {}
+        }
+        this.updateJson = this.updateJson.bind(this);
+    }
+
+    updateJson(newJson) {
+        this.setState({json: newJson});
+        this.props.search(newJson);
+    }
+
+    render() {
+        return <ReactJson
+                   style={{ padding: 8 }}
+                   src={this.state.json}
+                   theme="pop"
+                   enableClipboard={false}
+                   onEdit={(edit, a) => {
+                       this.updateJson(edit.updated_src);
+                   }}
+                   onAdd={(add, a) => {
+                       this.updateJson(add.updated_src);
+                   }}
+                   onDelete={(del, a) => {
+                       this.updateJson(del.updated_src);
+                   }}
+               />
+    }
+}
+
 /**
  * This class manages viewing chunks of JSON retrieved from a given endpoint
  */
@@ -73,20 +104,26 @@ export default class JsonViewer extends Component {
     constructor(props) {
 	super(props);
 	this.state = {
-	    json: []
+	    json: [],     // Current items to display
+            page: 1,      // current page
+            pageSize: 10,
+            token: null,
+            total: 0,
+            query: {}
 	}
 
         this.deleteJson = this.deleteJson.bind(this);
         this.removeJsonFromState = this.removeJsonFromState.bind(this);
+        this.loadPage = this.loadPage.bind(this);
+        this.updateSearchQuery = this.updateSearchQuery.bind(this);
     }
 
     async componentDidMount() {
 	console.log(process.env);
 	// TODO: Paginate and track the page
 	let token = await db.getToken(process.env.REACT_APP_ADMIN, process.env.REACT_APP_PASSWORD);
-	let data = await db.getJson(token, 5, {});
-	console.log(data);
-	this.setState({json: data.items, token: token});
+	let data = await db.getJson(token, 100, 1, 10, {});
+	this.setState({json: data.items, token: token, total: data.total});
     }
 
     /**
@@ -110,14 +147,34 @@ export default class JsonViewer extends Component {
         });
     }
 
+    async loadPage(page, pageSize) {
+        let data = await db.getJson(this.state.token, this.state.total, page, pageSize, this.state.query);
+        let originalTotal = this.state.total;
+        this.setState({json: data.items, page: page, pageSize: pageSize, total: data.total}, () => {
+            // After performing a search, the total search size is set to 1. Then the server will return
+            // the number of records that match the search. We should reload the search in that case.
+            if (this.state.total > originalTotal) {
+                this.loadPage(page, pageSize);
+            }
+        });
+    }
+
+    updateSearchQuery(query) {
+        this.setState({query: query, total: 1}, () => {
+            this.loadPage(this.state.page, this.state.pageSize);
+        });
+    }
+
     render() {
         let token = this.state.token;
 	let data = this.state.json.map(json => <JsonBlob key={json.id} deleteJson={() => this.deleteJson(json.id)} token={token} json={json} />);
-	
 	if (data.length > 0) {
 	    return <div>
+                       <JsonSearch search={this.updateSearchQuery} />
+                       <Pagination style={{marginTop: 10}} defaultCurrent={1} onChange={this.loadPage} total={this.state.total} />
 		       {data}
-	           </div>;
+                       <Pagination style={{marginTop: 10}} defaultCurrent={1} onChange={this.loadPage} total={this.state.total} />
+                   </div>;
 	} else {
 	    return <h1>Loading JSON...</h1>;
 	}

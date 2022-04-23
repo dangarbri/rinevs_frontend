@@ -149,16 +149,20 @@ class Database {
     /**
      * Reads json from the server
      */
-    async getJson(token, count, query) {
+    async getJson(token, count, page, pageSize, filter) {
 	      try {
 	          // Send the query
-	          let result = await axios.post(API_URL + "/read?count=" + count, query,
-				                                  {
-					                                    headers: {
-					                                        'Accept': 'application/json',
-					                                        'Authorization': 'Bearer ' + token
-					                                    },
-		                                      });
+	          let result = await axios.post(API_URL + "/read", filter, {
+		      headers: {
+			  'Accept': 'application/json',
+			  'Authorization': 'Bearer ' + token
+		      },
+                      params: {
+                          count: count,
+                          page: page,
+                          size: pageSize
+                      }
+		  });
 	          
 	          return result.data;
 	      } catch (error) {
