@@ -109,7 +109,8 @@ export default class JsonViewer extends Component {
             pageSize: 10,
             token: null,
             total: 0,
-            query: {}
+            query: {},
+            firstLoad: true
 	}
 
         this.deleteJson = this.deleteJson.bind(this);
@@ -123,7 +124,7 @@ export default class JsonViewer extends Component {
 	// TODO: Paginate and track the page
 	let token = await db.getToken(process.env.REACT_APP_ADMIN, process.env.REACT_APP_PASSWORD);
 	let data = await db.getJson(token, 100, 1, 10, {});
-	this.setState({json: data.items, token: token, total: data.total});
+	this.setState({json: data.items, token: token, total: data.total, firstLoad: false});
     }
 
     /**
@@ -167,16 +168,19 @@ export default class JsonViewer extends Component {
 
     render() {
         let token = this.state.token;
-	let data = this.state.json.map(json => <JsonBlob key={json.id} deleteJson={() => this.deleteJson(json.id)} token={token} json={json} />);
-	if (data.length > 0) {
-	    return <div>
+        let data = <p style={{marginTop: 10}}>No results to show</p>;
+        if (this.state.json.length > 0) {
+            data = this.state.json.map(json => <JsonBlob key={json.id} deleteJson={() => this.deleteJson(json.id)} token={token} json={json} />);
+        }
+	if (this.state.firstLoad) {
+	    return <h1>Loading JSON...</h1>;
+	} else {
+            return <div>
                        <JsonSearch search={this.updateSearchQuery} />
                        <Pagination style={{marginTop: 10}} defaultCurrent={1} onChange={this.loadPage} total={this.state.total} />
 		       {data}
                        <Pagination style={{marginTop: 10}} defaultCurrent={1} onChange={this.loadPage} total={this.state.total} />
                    </div>;
-	} else {
-	    return <h1>Loading JSON...</h1>;
 	}
     }
 }

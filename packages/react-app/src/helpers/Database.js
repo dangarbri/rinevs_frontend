@@ -38,6 +38,22 @@ class Database {
         return true;
     }
 
+    /**
+     * Use this function to decode server errors into more consistent errors
+     * that are easy to understand and handle.
+     */
+    decodeError(err) {
+        if (err.detail && err.detail[0]) {
+            let msg = err.detail[0].msg;
+            if (msg == "extra fields not permitted") {
+                return "Invalid JSON";
+            } else {
+                return msg;
+            }
+        }
+        return "An unknown error occurred.";
+    }
+
     // Registers an account on the API.
     async createAccount(email, password) {
         let response = await fetch(API_URL + "/auth/register", {
@@ -166,8 +182,18 @@ class Database {
 	          
 	          return result.data;
 	      } catch (error) {
-	          console.error(error);
-	          return [{beep: "beep"}, {boop: "boop"}];
+                  if (error.response) {
+                      let msg = this.decodeError(error.response.data);
+                      // For invalid JSON in the search query, there's no reason to alert
+                      // the user, just override the failure to no search results.
+                      // If it's some other error, then make an alert.
+                      if (msg != "Invalid JSON") {
+                          alert(msg);
+                      }
+                  } else {
+                      console.error(error);
+                  }
+	          return {items: [], total: 0};
 	      }
     }
 
